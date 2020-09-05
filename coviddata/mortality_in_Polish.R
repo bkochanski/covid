@@ -1,6 +1,7 @@
 library(dplyr)
 library(tidyr)
 library(ggplot2)
+library(Cairo)
 
 #stmf <- readr::read_csv("https://www.mortality.org/Public/STMF/Outputs/stmf.csv", skip=1)
 #saveRDS(stmf, "stmfsaved")
@@ -49,7 +50,10 @@ deaths <- stmf %>%
                      GRC="Grecja",
                      FRATNP="Francja")
   ) %>%
-  select(year, week, country, deaths)
+  select(year, week, country, deaths) %>%
+  group_by(country) %>%
+  mutate(mean_deaths = mean(deaths, na.rm=TRUE))
+
 
 
 #deaths [deaths$country %in% c("Polska", "Szwecja"),] %>%
@@ -62,11 +66,27 @@ plot1<-deaths%>%
   guides(col=FALSE) +
   ggtitle("Liczba zgonów tygodniowo - rok 2020 na niebiesko")+
   ylab("liczba zgonów") +
-  xlab("tydzień") 
-
+  xlab("tydzień")
 
 print(plot1)
 
 ggsave(filename="plot1.pdf", plot=plot1+theme(plot.margin=unit(c(1,1,1,1),"cm")), width = 297, height = 210, units = "mm")
 
+plot2<-deaths%>%
+  mutate(thisyear = (year == 2020)) %>%
+  ggplot(aes(x=week, y=deaths, group=year)) + 
+  geom_line(aes(col=thisyear)) +
+  facet_wrap(~ country, scales='free_y') +
+  scale_color_manual(values=c("FALSE"='gray',"TRUE"='blue')) +
+  guides(col=FALSE) +
+  ggtitle("Liczba zgonów tygodniowo - rok 2020 na niebiesko")+
+  ylab("liczba zgonów") +
+  xlab("tydzień") + 
+  geom_blank(aes(y = 0)) +
+  geom_blank(aes(y = 2.75*mean_deaths)) +
+  scale_y_continuous(labels= scales::comma)
+
+print(plot2)
+
+ggsave(filename="plot2.pdf", plot=plot2+theme(plot.margin=unit(c(1,1,1,1),"cm")), width = 297, height = 210, units = "mm", device=cairo_pdf)
        
