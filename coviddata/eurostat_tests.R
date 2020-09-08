@@ -1,4 +1,5 @@
 library(eurostat)
+library(Cairo)
 
 dat <- get_eurostat("demo_r_mwk_ts")
 dat2 <- get_eurostat("demo_r_mwk2_ts")
@@ -10,6 +11,8 @@ pop3 <- get_eurostat("demo_r_pjangrp3")
 dat20 <- get_eurostat("demo_r_mwk_20")
 dat10 <- get_eurostat("demo_r_mwk_10")
 dat5 <- get_eurostat("demo_r_mwk_5")
+
+dat10_2 <- get_eurostat("demo_r_mwk2_10")
 
 library(dplyr)
 
@@ -58,7 +61,7 @@ plot_age_groups<-dat10_b%>%
   ylab("liczba zgonów") +
   xlab("tydzień")+
   geom_blank(aes(y = 0)) +
-  geom_blank(aes(y = 4*mean_deaths)) +
+  geom_blank(aes(y = 3.5*mean_deaths)) +
   scale_y_continuous(labels= scales::comma)
 
 print(plot_age_groups)
@@ -71,3 +74,59 @@ ggsave(filename=paste("plot_age_groups_", country_now[1], ".pdf", sep=''), plot=
 plot_age_groups_by_country(c('ES', 'Hiszpania'))
 plot_age_groups_by_country(c('IT', 'Włochy'))
 plot_age_groups_by_country(c('UK', 'Wielka Brytania'))
+plot_age_groups_by_country(c('PL', 'Polska'))
+plot_age_groups_by_country(c('DE', 'Niemcy'))
+
+plot_age_groups_by_region<-function(region_now) {
+  
+  dat10_b<-dat10_2%>%
+    janitor::clean_names()%>%
+    mutate(year=as.numeric(substr(time,1,4)), week=as.numeric(substr(time,6,8))) %>%
+    filter(geo==region_now[1], sex=='T', age!='UNK', age!='Y_GE80') %>%
+    rename('deaths'='values')%>%
+    mutate(age = recode_factor(age, 
+                               'TOTAL'='Wszystkie grupy wiekowe', 
+                               'Y_LT10'='0-9 lat',
+                               'Y10-19'='10-19 lat', 
+                               'Y20-29'='20-29 lat', 
+                               'Y30-39'='30-39 lat', 
+                               'Y40-49'='40-49 lat', 
+                               'Y50-59'='50-59 lat', 
+                               'Y60-69'='60-69 lat', 
+                               'Y70-79'='70-79 lat', 
+                               'Y80-89'='80-89 lat', 
+                               'Y_GE90'='90+ lat'
+    ))%>%
+    select(year, week, age, deaths) %>%
+    group_by(age) %>%
+    mutate(mean_deaths = mean(deaths, na.rm=TRUE))
+  
+  #checking peak of the wave...
+  ymax<-max(dat10_b[dat10_b$year==2020,]$deaths/dat10_b[dat10_b$year==2020,]$mean_deaths)  
+  
+  plot_age_groups<-dat10_b%>%  
+    mutate(thisyear = (year == 2020)) %>%
+    ggplot(aes(x=week, y=deaths, group=year)) + 
+    geom_line(aes(col=thisyear)) +
+    facet_wrap(~ age, scales='free_y') +
+    scale_color_manual(values=c("FALSE"='gray',"TRUE"='blue')) +
+    guides(col=FALSE) +
+    ggtitle(paste(region_now[2], "- fala zgonów według grup wiekowych"))+
+    ylab("liczba zgonów") +
+    xlab("tydzień")+
+    geom_blank(aes(y = 0)) +
+    geom_blank(aes(y = ymax*mean_deaths)) +
+    scale_y_continuous(labels= scales::comma)
+  
+  print(plot_age_groups)
+  print(ymax)
+  
+  ggsave(filename=paste("plot_age_groups_", region_now[1], ".pdf", sep=''), plot=plot_age_groups+theme(plot.margin=unit(c(1,1,1,1),"cm")), width = 297, height = 210, units = "mm", device=cairo_pdf)
+}
+
+plot_age_groups_by_region(c('UKI', 'Londyn'))
+plot_age_groups_by_region(c('ITC4', 'Lombardia'))
+plot_age_groups_by_region(c('ES51', 'Katalonia'))
+plot_age_groups_by_region(c('ES3', 'Madryt'))
+
+
