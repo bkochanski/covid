@@ -4,9 +4,9 @@ library(ggplot2)
 library(Cairo)
 
 #stmf <- readr::read_csv("https://www.mortality.org/Public/STMF/Outputs/stmf.csv", skip=1)
-#saveRDS(stmf, "stmfsaved")
+#saveRDS(stmf, "stmfsaved2")
 
-stmf<-readRDS("stmfsaved")
+stmf<-readRDS("stmfsaved2")
 
 deaths <- stmf %>%
   janitor::clean_names() %>%
@@ -79,7 +79,7 @@ plot2<-deaths%>%
   facet_wrap(~ country, scales='free_y') +
   scale_color_manual(values=c("FALSE"='gray',"TRUE"='blue')) +
   guides(col=FALSE) +
-  ggtitle("Liczba zgonów tygodniowo - rok 2020 na niebiesko")+
+  ggtitle("Liczba zgonów tygodniowo - rok 2020 na niebiesko, pozostałe lata na szaro")+
   ylab("liczba zgonów") +
   xlab("tydzień") + 
   geom_blank(aes(y = 0)) +
@@ -89,4 +89,7 @@ plot2<-deaths%>%
 print(plot2)
 
 ggsave(filename="plot2.pdf", plot=plot2+theme(plot.margin=unit(c(1,1,1,1),"cm")), width = 297, height = 210, units = "mm", device=cairo_pdf)
-       
+
+
+
+
