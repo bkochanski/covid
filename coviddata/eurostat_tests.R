@@ -44,6 +44,7 @@ dat10_b<-dat10%>%
   group_by(age) %>%
   mutate(mean_deaths = mean(deaths, na.rm=TRUE))
 
+#checking peak of the wave...
 ymax<-max(dat10_b$deaths/dat10_b$mean_deaths)  
 
 plot_age_groups<-dat10_b%>%  
@@ -57,10 +58,11 @@ plot_age_groups<-dat10_b%>%
   ylab("liczba zgonów") +
   xlab("tydzień")+
   geom_blank(aes(y = 0)) +
-  geom_blank(aes(y = ymax*mean_deaths)) +
+  geom_blank(aes(y = 4*mean_deaths)) +
   scale_y_continuous(labels= scales::comma)
 
 print(plot_age_groups)
+print(ymax)
 
 ggsave(filename=paste("plot_age_groups_", country_now[1], ".pdf", sep=''), plot=plot_age_groups+theme(plot.margin=unit(c(1,1,1,1),"cm")), width = 297, height = 210, units = "mm", device=cairo_pdf)
 }
@@ -69,4 +71,3 @@ ggsave(filename=paste("plot_age_groups_", country_now[1], ".pdf", sep=''), plot=
 plot_age_groups_by_country(c('ES', 'Hiszpania'))
 plot_age_groups_by_country(c('IT', 'Włochy'))
 plot_age_groups_by_country(c('UK', 'Wielka Brytania'))
-
