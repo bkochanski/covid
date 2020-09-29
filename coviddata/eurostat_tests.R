@@ -1,5 +1,8 @@
 library(eurostat)
 library(Cairo)
+library(dplyr)
+library(janitor)
+library(ggplot2)
 
 dat <- get_eurostat("demo_r_mwk_ts")
 dat2 <- get_eurostat("demo_r_mwk2_ts")
@@ -28,7 +31,7 @@ plot_age_groups_by_country<-function(country_now) {
 dat10_b<-dat10%>%
   janitor::clean_names()%>%
   mutate(year=as.numeric(substr(time,1,4)), week=as.numeric(substr(time,6,8))) %>%
-  filter(geo==country_now[1], sex=='T', age!='UNK', age!='Y_GE80') %>%
+  filter(geo==country_now[1], sex=='T', age!='UNK', age!='Y_GE80', year>2010) %>%
   rename('deaths'='values')%>%
   mutate(age = recode_factor(age, 
                              'TOTAL'='Wszystkie grupy wiekowe', 
@@ -57,7 +60,7 @@ plot_age_groups<-dat10_b%>%
   facet_wrap(~ age, scales='free_y') +
   scale_color_manual(values=c("FALSE"='gray',"TRUE"='blue')) +
   guides(col=FALSE) +
-  ggtitle(paste(country_now[2], "- fala zgonów według grup wiekowych"))+
+  ggtitle(paste(country_now[2], "- tygodniowa liczba zgonów według grup wiekowych; niebieski - 2020"))+
   ylab("liczba zgonów") +
   xlab("tydzień")+
   geom_blank(aes(y = 0)) +
@@ -76,6 +79,7 @@ plot_age_groups_by_country(c('IT', 'Włochy'))
 plot_age_groups_by_country(c('UK', 'Wielka Brytania'))
 plot_age_groups_by_country(c('PL', 'Polska'))
 plot_age_groups_by_country(c('DE', 'Niemcy'))
+plot_age_groups_by_country(c('RO', 'Rumunia'))
 
 plot_age_groups_by_region<-function(region_now) {
   
@@ -111,7 +115,7 @@ plot_age_groups_by_region<-function(region_now) {
     facet_wrap(~ age, scales='free_y') +
     scale_color_manual(values=c("FALSE"='gray',"TRUE"='blue')) +
     guides(col=FALSE) +
-    ggtitle(paste(region_now[2], "- fala zgonów według grup wiekowych"))+
+    ggtitle(paste(region_now[2], "- tygodniowa liczba zgonów według grup wiekowych; niebieski - 2020"))+
     ylab("liczba zgonów") +
     xlab("tydzień")+
     geom_blank(aes(y = 0)) +
@@ -128,5 +132,7 @@ plot_age_groups_by_region(c('UKI', 'Londyn'))
 plot_age_groups_by_region(c('ITC4', 'Lombardia'))
 plot_age_groups_by_region(c('ES51', 'Katalonia'))
 plot_age_groups_by_region(c('ES3', 'Madryt'))
+plot_age_groups_by_region(c('FR1', 'Paryż'))
+
 
 
