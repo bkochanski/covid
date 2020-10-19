@@ -4,9 +4,9 @@ library(ggplot2)
 library(Cairo)
 
 #stmf <- readr::read_csv("https://www.mortality.org/Public/STMF/Outputs/stmf.csv", skip=1)
-#saveRDS(stmf, "stmfsaved3")
+#saveRDS(stmf, "stmfsaved5")
 
-stmf<-readRDS("stmfsaved3")
+stmf<-readRDS("stmfsaved5")
 
 deaths <- stmf %>%
   janitor::clean_names() %>%
@@ -49,7 +49,8 @@ deaths <- stmf %>%
                      SVN="Słowenia",
                      GRC="Grecja",
                      FRATNP="Francja",
-                     GBR_NIR = "Irlandia Północna")
+                     GBR_NIR = "Irlandia Północna",
+                     KOR="Korea")
   ) %>%
   select(year, week, country, deaths) %>%
   group_by(country) %>%
@@ -57,7 +58,7 @@ deaths <- stmf %>%
 
 
 
-#deaths [deaths$country %in% c("Polska", "Szwecja"),] %>%
+#deaths [deaths$country %in% c("Stany Zjednoczone"),] %>%
 plot1<-deaths%>%
   mutate(thisyear = (year == 2020)) %>%
   ggplot(aes(x=week, y=deaths, group=year)) + 
