@@ -4,9 +4,9 @@ library(ggplot2)
 library(Cairo)
 
 #stmf <- readr::read_csv("https://www.mortality.org/Public/STMF/Outputs/stmf.csv", skip=1)
-#saveRDS(stmf, "stmfsaved5")
+#saveRDS(stmf, "stmfsaved6")
 
-stmf<-readRDS("stmfsaved5")
+stmf<-readRDS("stmfsaved6")
 
 deaths <- stmf %>%
   janitor::clean_names() %>%
@@ -50,7 +50,9 @@ deaths <- stmf %>%
                      GRC="Grecja",
                      FRATNP="Francja",
                      GBR_NIR = "Irlandia Północna",
-                     KOR="Korea")
+                     KOR="Korea",
+                     NZL_NP="New Zealand", 
+                     CHL="Chile")
   ) %>%
   select(year, week, country, deaths) %>%
   group_by(country) %>%
