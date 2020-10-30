@@ -1,9 +1,10 @@
 library(eurostat)
 library(dplyr)
 library(ggplot2)
+library(lubridate)
 
-date_in_week <- function(year, week, weekday){
-  as.Date(paste(as.character(2020), "-01-01", sep="")) + week * 7 - as.numeric(format(as.Date(paste(as.character(2020), "-01-01", sep="")), "%w")) +weekday-1
+date_in_week <- function(year, week){
+  ymd(paste0(year,"-01-01")) + weeks(week) - days(1)
 }
 
 dat <- get_eurostat("demo_r_mwk_ts", cache=FALSE)
@@ -14,7 +15,7 @@ dat %>%
   filter(year==2020 & week<99 & sex=='T') %>%
   group_by(geo) %>% filter(week == max(week)) %>% 
   filter(geo=='PL'|geo=='SE') %>%
-  mutate(date=date_in_week(year=year, week=week, weekday=7))
+  mutate(date=date_in_week(year=year, week=week))
 
 plotpl<-dat%>%
   filter(geo=='PL')%>%
@@ -64,10 +65,11 @@ dat%>%
   mutate(year=as.numeric(substr(time,1,4)), week=as.numeric(substr(time,6,8))) %>%
   filter(geo %in% c('PL', 'SE'), sex=='T', year>2000, week<99, year<2020 | week<41) %>%
   rename('deaths'='values')%>%
-  select(year, week, geo, deaths)%>%
+  select(year, week, geo, deaths) %>%
+  mutate(date = date_in_week(2020, week), format="%d-%m") %>%
   mutate(year_group = ifelse(year == 2020,'2','0')) %>%
   mutate(year_group = ifelse(year == 2019,'1',year_group)) %>%
-  ggplot(aes(x=week, y=deaths, group=year)) + 
+  ggplot(aes(x=date, y=deaths, group=year)) + 
   facet_wrap(~ geo, scales='free_y') +
   geom_line(aes(col=year_group)) +
   scale_color_manual(values=c('0'='gray','1'='green', '2'='blue')) +
@@ -76,4 +78,5 @@ dat%>%
   ylab("liczba zgonów") +
   xlab("tydzień")+
   geom_blank(aes(y = 0)) +
-  scale_y_continuous(labels= scales::comma)
+  scale_y_continuous(labels= scales::comma) +
+  scale_x_date(date_breaks = "1 month", date_labels = "%b")
