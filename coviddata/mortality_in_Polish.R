@@ -5,11 +5,18 @@ library(Cairo)
 library(lubridate)
 
 #stmf <- readr::read_csv("https://www.mortality.org/Public/STMF/Outputs/stmf.csv", skip=1)
-#saveRDS(stmf, "stmfsaved7")
+#saveRDS(stmf, "stmfsaved8")
 
-stmf<-readRDS("stmfsaved7")
+stmf<-readRDS("stmfsaved8")
 
-gbr<-stmf[startsWith(stmf$CountryCode,'GBR') & stmf$Sex=='b',] %>%  
+mingbrweek<-stmf[startsWith(stmf$CountryCode,'GBR') & stmf$Sex=='b'&stmf$Year==2020,]%>% group_by(CountryCode)%>%
+  summarize(maxweek=max(Week))%>%
+  select(maxweek)%>%
+  summarize(min(maxweek))%>%
+  as.numeric()
+
+#summing up UK
+gbr<-stmf[startsWith(stmf$CountryCode,'GBR') & stmf$Sex=='b' & (stmf$Week<=mingbrweek|stmf$Year<2020),] %>%  
   mutate(year=Year, week=Week)%>%
   group_by(year, week)%>%
   summarise(deaths=sum(DTotal))%>%
@@ -68,9 +75,9 @@ deaths <- stmf %>%
   ) %>%
   select(year, week, country, country_code, deaths) %>%
   rbind(list(2020, 41, "Polska","POL", 9164)) %>%
-  rbind(list(2020, 42, "Polska","POL", 10208)) %>%
-  rbind(list(2020, 43, "Polska","POL", 12244)) %>%
-  rbind(list(2020, 44, "Polska","POL", 12257)) %>%
+  rbind(list(2020, 42, "Polska","POL", 10222)) %>%
+  rbind(list(2020, 43, "Polska","POL", 12318)) %>%
+  rbind(list(2020, 44, "Polska","POL", 14634)) %>%
   bind_rows(gbr) %>%
   group_by(country) %>%
   mutate(mean_deaths = mean(deaths, na.rm=TRUE))
@@ -155,9 +162,9 @@ ggsave(filename="plot4.pdf", plot=plot4+theme(plot.margin=unit(c(1,1,1,1),"cm"))
 
 
 # owid <- readr::read_csv("https://covid.ourworldindata.org/data/owid-covid-data.csv", col_types='fffDnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn')
-#saveRDS(owid, "owidsaved1")
+#saveRDS(owid, "owidsaved2")
 
-owid<-readRDS("owidsaved1")
+owid<-readRDS("owidsaved2")
 
 selected_countries<-c('POL', 'BEL', 'NLD', 'SWE', 'FRA', 'FRATNP', 'ESP', 'ITA', 'CAN', 'USA', 'CHL', 'ISR', 'DEU', 'DEUTNP', 'CHE', 'GBR')
 
@@ -242,3 +249,4 @@ plot6<-excess_deaths %>%
 print(plot6)
 
 ggsave(filename="plot6.pdf", plot=plot3+theme(plot.margin=unit(c(1,1,1,1),"cm")), width = 297, height = 210, units = "mm", device=cairo_pdf)
+
