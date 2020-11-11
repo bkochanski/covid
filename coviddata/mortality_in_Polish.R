@@ -82,6 +82,9 @@ deaths <- stmf %>%
   group_by(country) %>%
   mutate(mean_deaths = mean(deaths, na.rm=TRUE))
 
+#weeks 41-44 added from money.pl
+#https://infogram.com/liczba-zgonow-w-dobie-epidemii-1h7v4pwnw1kq86k
+#https://www.money.pl/gospodarka/i-znowu-rekord-liczba-ukrytych-ofiar-epidemii-wciaz-rosnie-6573778690960288a.html
 
 
 #deaths [deaths$country %in% c("Stany Zjednoczone"),] %>%
@@ -226,7 +229,9 @@ plot5<-excess_deaths %>%
   facet_wrap(~ country, scales='free_y') +
   scale_color_manual(values=c("FALSE"='gray',"TRUE"='red')) +
   guides(col=FALSE) +
-  ggtitle("Nadmiarowe zgony w 2020 (czerwony) \noraz zgony z Covid19 (żółty) w kolejnych tygodniach")
+  ggtitle("Nadmiarowe zgony w 2020 (czerwony) \noraz zgony z Covid19 (żółty) w kolejnych tygodniach")+
+  ylab("liczba zgonów") +
+  xlab("tydzień")
 
 print(plot5)
 
@@ -244,7 +249,10 @@ plot6<-excess_deaths %>%
   facet_wrap(~ country, scales='free_y') +
   scale_color_manual(values=c("FALSE"='gray',"TRUE"='red')) +
   guides(col=FALSE) +
-  ggtitle("Nadmiarowe zgony w 2020 (czerwony) \noraz zgony z Covid19 (żółty) w kolejnych tygodniach")
+  ggtitle("Nadmiarowe zgony w 2020 (czerwony) \noraz zgony z Covid19 (żółty) w kolejnych tygodniach") +
+  ylab("liczba zgonów") +
+  xlab("tydzień")
+  
 
 print(plot6)
 
