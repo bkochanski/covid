@@ -4,18 +4,19 @@ library(dplyr)
 library(janitor)
 library(ggplot2)
 
-dat <- get_eurostat("demo_r_mwk_ts")
-dat2 <- get_eurostat("demo_r_mwk2_ts")
-dat3 <- get_eurostat("demo_r_mwk3_ts")
-pop <- get_eurostat("demo_pjangroup")
-pop2 <- get_eurostat("demo_r_pjangroup")
-pop3 <- get_eurostat("demo_r_pjangrp3")
+cache_option<-FALSE
+dat <- get_eurostat("demo_r_mwk_ts", cache=cache_option)
+dat2 <- get_eurostat("demo_r_mwk2_ts", cache=cache_option)
+dat3 <- get_eurostat("demo_r_mwk3_ts", cache=cache_option)
+pop <- get_eurostat("demo_pjangroup", cache=cache_option)
+pop2 <- get_eurostat("demo_r_pjangroup", cache=cache_option)
+pop3 <- get_eurostat("demo_r_pjangrp3", cache=cache_option)
 
-dat20 <- get_eurostat("demo_r_mwk_20")
-dat10 <- get_eurostat("demo_r_mwk_10")
-dat5 <- get_eurostat("demo_r_mwk_5")
+dat20 <- get_eurostat("demo_r_mwk_20", cache=cache_option)
+dat10 <- get_eurostat("demo_r_mwk_10", cache=cache_option)
+dat5 <- get_eurostat("demo_r_mwk_5", cache=cache_option)
 
-dat10_2 <- get_eurostat("demo_r_mwk2_10")
+dat10_2 <- get_eurostat("demo_r_mwk2_10", cache=cache_option)
 
 library(dplyr)
 
@@ -64,7 +65,7 @@ plot_age_groups<-dat10_b%>%
   ylab("liczba zgonów") +
   xlab("tydzień")+
   geom_blank(aes(y = 0)) +
-  geom_blank(aes(y = 3.5*mean_deaths)) +
+  geom_blank(aes(y = ymax*mean_deaths)) +
   scale_y_continuous(labels= scales::comma)
 
 print(plot_age_groups)
@@ -80,6 +81,7 @@ plot_age_groups_by_country(c('UK', 'Wielka Brytania'))
 plot_age_groups_by_country(c('PL', 'Polska'))
 plot_age_groups_by_country(c('DE', 'Niemcy'))
 plot_age_groups_by_country(c('RO', 'Rumunia'))
+plot_age_groups_by_country(c('CZ', 'Czechy'))
 
 plot_age_groups_by_region<-function(region_now) {
   

@@ -13,7 +13,8 @@ dat %>%
   mutate(year=as.numeric(substr(time,1,4)), week=as.numeric(substr(time,6,8))) %>%
   filter(year==2020 & week<99 & sex=='T') %>%
   group_by(geo) %>% filter(week == max(week)) %>% 
-  filter(geo=='PL'|geo=='SE') %>%
+  #  filter(geo=='PL'|geo=='SE') %>%
+  filter(geo=='PL') %>%
   mutate(date=date_in_week(year=year, week=week, weekday=7))
 
 plotpl<-dat%>%
@@ -62,7 +63,7 @@ plotpl2
 dat%>%
   janitor::clean_names()%>%
   mutate(year=as.numeric(substr(time,1,4)), week=as.numeric(substr(time,6,8))) %>%
-  filter(geo %in% c('PL', 'SE'), sex=='T', year>2000, week<99, year<2020 | week<41) %>%
+  filter(geo %in% c('PL', 'SE'), sex=='T', year>2000, week<99, year<2020 | week<45) %>%
   rename('deaths'='values')%>%
   select(year, week, geo, deaths)%>%
   mutate(year_group = ifelse(year == 2020,'2','0')) %>%

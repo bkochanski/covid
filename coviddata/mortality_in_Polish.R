@@ -5,9 +5,9 @@ library(Cairo)
 library(lubridate)
 
 #stmf <- readr::read_csv("https://www.mortality.org/Public/STMF/Outputs/stmf.csv", skip=1)
-#saveRDS(stmf, "stmfsaved8")
+#saveRDS(stmf, "stmfsaved9")
 
-stmf<-readRDS("stmfsaved8")
+stmf<-readRDS("stmfsaved9")
 
 mingbrweek<-stmf[startsWith(stmf$CountryCode,'GBR') & stmf$Sex=='b'&stmf$Year==2020,]%>% group_by(CountryCode)%>%
   summarize(maxweek=max(Week))%>%
@@ -37,6 +37,7 @@ deaths <- stmf %>%
   mutate(
     country = recode(country_code,
                      AUT = "Austria",
+                     AUS2 = "Australia",
                      BEL = "Belgia",
                      DEUTNP = "Niemcy",
                      DNK = "Dania",
@@ -74,10 +75,10 @@ deaths <- stmf %>%
                      CAN="Kanada")
   ) %>%
   select(year, week, country, country_code, deaths) %>%
-  rbind(list(2020, 41, "Polska","POL", 9164)) %>%
-  rbind(list(2020, 42, "Polska","POL", 10222)) %>%
-  rbind(list(2020, 43, "Polska","POL", 12318)) %>%
-  rbind(list(2020, 44, "Polska","POL", 14634)) %>%
+#  rbind(list(2020, 41, "Polska","POL", 9164)) %>%
+#  rbind(list(2020, 42, "Polska","POL", 10222)) %>%
+#  rbind(list(2020, 43, "Polska","POL", 12318)) %>%
+#  rbind(list(2020, 44, "Polska","POL", 14634)) %>%
   bind_rows(gbr) %>%
   group_by(country) %>%
   mutate(mean_deaths = mean(deaths, na.rm=TRUE))
