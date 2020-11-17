@@ -75,10 +75,10 @@ deaths <- stmf %>%
                      CAN="Kanada")
   ) %>%
   select(year, week, country, country_code, deaths) %>%
-#  rbind(list(2020, 41, "Polska","POL", 9164)) %>%
-#  rbind(list(2020, 42, "Polska","POL", 10222)) %>%
-#  rbind(list(2020, 43, "Polska","POL", 12318)) %>%
-#  rbind(list(2020, 44, "Polska","POL", 14634)) %>%
+  rbind(list(2020, 41, "Polska","POL", 9164)) %>%
+  rbind(list(2020, 42, "Polska","POL", 10222)) %>%
+  rbind(list(2020, 43, "Polska","POL", 12318)) %>%
+  rbind(list(2020, 44, "Polska","POL", 14634)) %>%
   bind_rows(gbr) %>%
   group_by(country) %>%
   mutate(mean_deaths = mean(deaths, na.rm=TRUE))
