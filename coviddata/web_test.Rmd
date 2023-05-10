@@ -1,0 +1,421 @@
+---
+title: "Wybrane dane o koronawirusie na wykresach"
+author: "Błażej Kochański"
+date: "18 grudnia 2020"
+output: 
+ html_document:
+  toc: true
+  toc_float: 
+    collapsed: true
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(Cairo)
+library(lubridate)
+
+#stmf <- readr::read_csv("https://www.mortality.org/Public/STMF/Outputs/stmf.csv", skip=1)
+#saveRDS(stmf, "stmfsaved12")
+
+stmf<-readRDS("stmfsaved12")
+
+mingbrweek<-stmf[startsWith(stmf$CountryCode,'GBR') & stmf$Sex=='b'&stmf$Year==2020,]%>% group_by(CountryCode)%>%
+  summarize(maxweek=max(Week))%>%
+  select(maxweek)%>%
+  summarize(min(maxweek))%>%
+  as.numeric()
+
+#summing up UK
+gbr<-stmf[startsWith(stmf$CountryCode,'GBR') & stmf$Sex=='b' & (stmf$Week<=mingbrweek|stmf$Year<2020),] %>%  
+  mutate(year=Year, week=Week)%>%
+  group_by(year, week)%>%
+  summarise(deaths=sum(DTotal))%>%
+  mutate(country_code='GBR')%>%
+  filter(year>2009)%>%
+  mutate(country='Wielka Brytania')%>%
+  select(year, week, country, country_code, deaths)
+
+deaths <- stmf %>%
+  janitor::clean_names() %>%
+  select(country_code:d_total) %>%
+  pivot_longer(5:10,
+               names_to = "age", values_to = "deaths",
+               names_pattern = "[d_]*([a-z0-9_p]*)"
+  ) %>%
+  filter(age == "total", sex == "b") %>%
+  filter(!country_code %in% c('GBRTENW', 'GBR_SCO', 'GBR_NIR'))%>%
+  mutate(
+    country = recode(country_code,
+                     AUT = "Austria",
+                     AUS2 = "Australia",
+                     BEL = "Belgia",
+                     DEUTNP = "Niemcy",
+                     DNK = "Dania",
+                     ESP = "Hiszpania",
+                     FIN = "Finlandia",
+                     GBRTENW = "Anglia i Walia",
+                     ISL = "Islandia",
+                     NLD = "Holandia",
+                     NOR = "Norwegia",
+                     PRT = "Portugalia",
+                     SWE = "Szwecja",
+                     USA = "Stany Zjednoczone",
+                     POL ="Polska",
+                     BGR="Bułgaria",
+                     GBR_SCO="Szkocja",
+                     CZE="Czechy",
+                     LVA="Łotwa",
+                     RUS="Rosja",
+                     CHE="Szwajcaria",
+                     ISR="Izrael",
+                     LTU="Litwa", 
+                     ITA="Włochy",
+                     HRV="Chorwacja",
+                     HUN="Węgry",
+                     EST="Estonia",
+                     SVK="Słowacja", 
+                     LUX="Luksemburg",
+                     SVN="Słowenia",
+                     GRC="Grecja",
+                     FRATNP="Francja",
+                     GBR_NIR = "Irlandia Północna",
+                     TWN="Tajwan", 
+                     KOR="Korea",
+                     NZL_NP="Nowa Zelandia", 
+                     CHL="Chile",
+                     CAN="Kanada")
+  ) %>%
+  select(year, week, country, country_code, deaths) %>%
+  rbind(list(2020, 45, "Polska","POL", 16048)) %>%
+  rbind(list(2020, 46, "Polska","POL", 15457)) %>%
+  rbind(list(2020, 47, "Polska","POL", 14643)) %>%
+  rbind(list(2020, 48, "Polska","POL", 13419)) %>%
+  rbind(list(2020, 49, "Polska","POL", 12182)) %>%
+  bind_rows(gbr) %>%
+  group_by(country) %>%
+  mutate(mean_deaths = mean(deaths, na.rm=TRUE))
+
+#weeks 45-49 added from GUS (stat.gov.pl) webpage
+
+plot1<-deaths%>%
+  mutate(thisyear = (year == 2020)) %>%
+  ggplot(aes(x=week, y=deaths, group=year)) + 
+  geom_line(aes(col=thisyear)) +
+  facet_wrap(~ country, scales='free_y') +
+  scale_color_manual(values=c("FALSE"='gray',"TRUE"='blue')) +
+  guides(col=FALSE) +
+  ggtitle("Liczba zgonów tygodniowo - rok 2020 na niebiesko")+
+  ylab("liczba zgonów") +
+  xlab("tydzień")
+
+
+plot2<-deaths%>%
+  mutate(thisyear = (year == 2020)) %>%
+  ggplot(aes(x=week, y=deaths, group=year)) + 
+  geom_line(aes(col=thisyear)) +
+  facet_wrap(~ country, scales='free_y') +
+  scale_color_manual(values=c("FALSE"='gray',"TRUE"='blue')) +
+  guides(col=FALSE) +
+  ggtitle("Liczba zgonów tygodniowo - rok 2020 na niebiesko, pozostałe lata na szaro")+
+  ylab("liczba zgonów") +
+  xlab("tydzień") + 
+  geom_blank(aes(y = 0)) +
+  geom_blank(aes(y = 2.8*mean_deaths)) +
+  scale_y_continuous(labels= scales::comma)
+
+plot3<-deaths[deaths$country_code=='POL',]%>%
+  mutate(thisyear = (year == 2020)) %>%
+  ggplot(aes(x=week, y=deaths, group=year)) + 
+  geom_line(aes(col=thisyear)) +
+  scale_color_manual(values=c("FALSE"='gray',"TRUE"='blue')) +
+  guides(col=FALSE) +
+  ggtitle("Zgony tygodniowo - Polska \n2020 na niebiesko, pozostałe lata na szaro")+
+  ylab("liczba zgonów") +
+  xlab("tydzień") + 
+  geom_blank(aes(y = 0)) +
+  geom_blank(aes(y = 2*mean_deaths)) +
+  scale_y_continuous(labels= scales::comma)
+
+
+
+
+recent_deaths <- deaths %>%
+  filter(year >= 2015 & year <= 2019) %>%
+  group_by(country,week) %>%
+  summarise(median_deaths = median(deaths)) %>%
+  ungroup()
+excess_deaths <- deaths %>%
+  filter(year >= 2015) %>%
+  left_join(recent_deaths) %>%
+  mutate(excess = deaths - median_deaths)
+plot4<-excess_deaths %>%
+  mutate(thisyear = (year == 2020)) %>%
+  ggplot(aes(x=week, y=excess, group=year)) +
+  geom_hline(yintercept=0, col='gray') +
+  geom_line(aes(col=thisyear)) +
+  facet_wrap(~ country, scales='free_y') +
+  scale_color_manual(values=c("FALSE"='gray',"TRUE"='red')) +
+  guides(col=FALSE) +
+  ggtitle("Weekly excess deaths")
+
+owid<-readRDS("owidsaved5")
+
+selected_countries<-c('POL', 'BEL', 'NLD', 'SWE', 'FRA', 'FRATNP', 'ESP', 'ITA', 'CAN', 'USA', 'CHL', 'ISR', 'DEU', 'DEUTNP', 'CHE', 'GBR', 'CZE', 'HUN', 'BGR', 'AUT', 'SVN', 'LTU', 'HRV',
+                      'PRT')
+
+owid2<-owid%>%
+  filter(iso_code %in% selected_countries 
+         & year(date)==2020)%>%
+  select(iso_code, location, date, new_deaths)%>%
+  mutate(year=year(date), week=week(date))%>%
+  group_by(iso_code, year, week)%>%
+  summarise(deaths=sum(new_deaths))%>%
+  mutate(
+    country = recode(iso_code,
+                     AUT = "Austria",
+                     BEL = "Belgia",
+                     DEU = "Niemcy",
+                     DNK = "Dania",
+                     ESP = "Hiszpania",
+                     FIN = "Finlandia",
+                     GBRTENW = "Anglia i Walia",
+                     ISL = "Islandia",
+                     NLD = "Holandia",
+                     NOR = "Norwegia",
+                     PRT = "Portugalia",
+                     SWE = "Szwecja",
+                     USA = "Stany Zjednoczone",
+                     POL ="Polska",
+                     BGR="Bułgaria",
+                     GBR_SCO="Szkocja",
+                     CZE="Czechy",
+                     LVA="Łotwa",
+                     RUS="Rosja",
+                     CHE="Szwajcaria",
+                     ISR="Izrael",
+                     LTU="Litwa", 
+                     ITA="Włochy",
+                     HRV="Chorwacja",
+                     HUN="Węgry",
+                     EST="Estonia",
+                     SVK="Słowacja", 
+                     LUX="Luksemburg",
+                     SVN="Słowenia",
+                     GRC="Grecja",
+                     FRA="Francja",
+                     GBR_NIR = "Irlandia Północna",
+                     KOR="Korea",
+                     NZL_NP="Nowa Zelandia", 
+                     CHL="Chile",
+                     CAN="Kanada",
+                     GBR='Wielka Brytania'))
+
+
+plot5<-excess_deaths %>%
+  filter(country_code %in% selected_countries)%>%
+  mutate(thisyear = (year == 2020)) %>%
+  ggplot(aes(x=week, y=excess, group=year)) +
+  geom_area(data=owid2, aes(x=week, y=deaths), fill='yellow', col='orange') +
+  geom_hline(yintercept=0, col='gray') +
+  geom_line(aes(col=thisyear)) +
+  facet_wrap(~ country, scales='free_y') +
+  scale_color_manual(values=c("FALSE"='gray',"TRUE"='red')) +
+  guides(col=FALSE) +
+  ggtitle("Nadmiarowe zgony w 2020 (czerwony) \noraz zgony z Covid19 (żółty) w kolejnych tygodniach")+
+  ylab("liczba zgonów") +
+  xlab("tydzień")
+
+plot6<-excess_deaths %>%
+  filter(country_code=='POL')%>%
+  mutate(thisyear = (year == 2020)) %>%
+  ggplot(aes(x=week, y=excess, group=year)) +
+  geom_area(data=owid2[owid2$iso_code=='POL',], aes(x=week, y=deaths), fill='yellow', col='orange') +
+  geom_hline(yintercept=0, col='gray') +
+  geom_line(aes(col=thisyear)) +
+  facet_wrap(~ country, scales='free_y') +
+  scale_color_manual(values=c("FALSE"='gray',"TRUE"='red')) +
+  guides(col=FALSE) +
+  ggtitle("Nadmiarowe zgony w 2020 (czerwony) \noraz zgony z Covid19 (żółty) w kolejnych tygodniach") +
+  ylab("liczba zgonów") +
+  xlab("tydzień")
+  
+#Województwa
+#Od M. Rogalskiego (bit.ly/covid19-poland)
+
+library(gsheet)
+a<-gsheet2tbl('https://docs.google.com/spreadsheets/d/1ierEhD6gcq51HAm433knjnVwey4ZE5DCnu1bW7PRG3E/edit#gid=1841152698')
+
+#View(a)
+start<-50 #to się może zmieniać
+a[start+17,1]<-'Polska'
+daty<-c(paste(t(a[start,2:(dim(a)[2]-1)]),'2020',sep='.'))
+daty<-as.Date(daty, format = "%d.%m.%Y")
+a2<-data.frame(a[start+1,1], daty, zgony=unname(c(as.numeric(t(a[start+1,2:(dim(a)[2]-1)])))))
+for (i in 2:17){
+  a2<-rbind(a2, data.frame(a[start+i,1], daty, zgony=unname(c(as.numeric(t(a[start+i,2:(dim(a)[2]-1)]))))))}
+names(a2)<-c('location', 'date', 'new_deaths') 
+a2$location<-toupper(a2$location)
+
+#Eurostat
+library(eurostat)
+cache_option<-FALSE
+dat2 <- get_eurostat("demo_r_mwk2_ts", cache=cache_option)
+
+wojewodztwa<-c('PL21', 'PL22', 'PL41', 'PL42', 'PL43', 'PL51', 'PL52', 'PL61', 'PL62', 'PL63', 'PL71', 'PL72', 'PL81', 'PL82', 'PL84', 'PL9')
+
+library(dplyr)
+datw<-
+  dat2%>%
+  janitor::clean_names()%>%
+  mutate(year=as.numeric(substr(time,1,4)), week=as.numeric(substr(time,6,8))) %>%
+  filter(geo %in% wojewodztwa, sex=='T', year>2010) %>%
+  rename('deaths'='values')%>%
+  select(year, week, geo, deaths) %>%
+  mutate(
+    location = recode(geo,PL21 = "MAŁOPOLSKIE",
+                      PL22 = "ŚLĄSKIE",
+                      PL41 = "WIELKOPOLSKIE",
+                      PL42 = "ZACHODNIOPOMORSKIE",
+                      PL43 = "LUBUSKIE",
+                      PL51 = "DOLNOŚLĄSKIE",
+                      PL52 = "OPOLSKIE",
+                      PL61 = "KUJAWSKO-POMORSKIE",
+                      PL62 = "WARMIŃSKO-MAZURSKIE",
+                      PL63 = "POMORSKIE",
+                      PL71 = "ŁÓDZKIE",
+                      PL72 = "ŚWIĘTOKRZYSKIE",
+                      PL81 = "LUBELSKIE",
+                      PL82 = "PODKARPACKIE",
+                      PL84 = "PODLASKIE",
+                      PL9 = "MAZOWIECKIE")) %>%
+  group_by(geo) %>%
+  mutate(mean_deaths = mean(deaths, na.rm=TRUE))
+
+library(ggplot2)
+
+ymaxw<-max(datw$deaths/datw$mean_deaths)  
+
+plotw1<-datw%>%
+  mutate(thisyear = (year == 2020)) %>%
+  ggplot(aes(x=week, y=deaths, group=year)) + 
+  geom_line(aes(col=thisyear)) +
+  facet_wrap(~ location, scales='free_y') +
+  scale_color_manual(values=c("FALSE"='gray',"TRUE"='blue')) +
+  guides(col=FALSE) +
+  ggtitle("Liczba zgonów tygodniowo - rok 2020 na niebiesko")+
+  ylab("liczba zgonów") +
+  xlab("tydzień") + 
+  geom_blank(aes(y = 0)) +
+  geom_blank(aes(y = ymaxw*mean_deaths)) +
+  scale_y_continuous(labels= scales::comma)
+
+
+datw%>%
+  group_by(location)%>%
+  summarise(m=max(deaths/mean_deaths))%>%
+  select(location, m)%>%
+  mutate(m=m*100-100)%>%
+  arrange(desc(m))
+
+recent_deaths_w <- datw %>%
+  filter(year >= 2015 & year <= 2019) %>%
+  group_by(location,week) %>%
+  summarise(median_deaths = median(deaths)) %>%
+  ungroup()
+excess_deaths_w <- datw %>%
+  filter(year >= 2015) %>%
+  left_join(recent_deaths_w) %>%
+  mutate(excess = deaths - median_deaths)
+plotw4<-excess_deaths_w %>%
+  mutate(thisyear = (year == 2020)) %>%
+  ggplot(aes(x=week, y=excess, group=year)) +
+  geom_hline(yintercept=0, col='gray') +
+  geom_line(aes(col=thisyear)) +
+  facet_wrap(~ location, scales='free_y') +
+  scale_color_manual(values=c("FALSE"='gray',"TRUE"='red')) +
+  guides(col=FALSE) +
+  ggtitle("Nadmiarowe zgony tygodniowo")+
+  ylab("liczba zgonów") +
+  xlab("tydzień") + 
+  geom_blank(aes(y = 0)) +
+  geom_blank(aes(y = (ymaxw-1)*mean_deaths)) +
+  scale_y_continuous(labels= scales::comma)
+
+
+
+library(lubridate)
+
+maxweek<-max(datw$week[datw$year==2020])
+#maxweek<-51
+
+owidw<-a2%>%
+  filter(location!='POLSKA' & year(date)==2020
+         & isoweek(date)<=maxweek)%>%
+  select(location, date, new_deaths)%>%
+  mutate(year=year(date), week=isoweek(date))%>%
+  group_by(location, year, week)%>%
+  summarise(deaths=sum(new_deaths))
+
+plot5w<-excess_deaths_w %>%
+  mutate(thisyear = (year == 2020)) %>%
+  ggplot(aes(x=week, y=excess, group=year)) +
+  geom_area(data=owidw, aes(x=week, y=deaths), fill='yellow', col='orange') +
+  geom_hline(yintercept=0, col='gray') +
+  geom_line(aes(col=thisyear)) +
+  facet_wrap(~ location, scales='free_y') +
+  scale_color_manual(values=c("FALSE"='gray',"TRUE"='red')) +
+  guides(col=FALSE) +
+  ggtitle("Nadmiarowe zgony w 2020 (czerwony) \noraz zgony z Covid19 (żółty) w kolejnych tygodniach")+
+  ylab("liczba zgonów") +
+  xlab("tydzień")+ 
+  geom_blank(aes(y = 0)) +
+  geom_blank(aes(y = (ymaxw-1)*mean_deaths)) +
+  scale_y_continuous(labels= scales::comma)
+
+```
+
+## Liczba zgonów tygodniowo w wybranych państwach
+
+You can also embed plots, for example:
+
+```{r plot1, echo=FALSE}
+plot1
+```
+
+Drugi wykres podobny jest do pierwszego, jedyna zmiana polega na tym, że zmieniono skalę osi pionowej - teraz w przypadku każdego państwa oś jest 
+
+```{r plot2, echo=FALSE}
+plot2
+```
+
+```{r plot3, echo=FALSE}
+plot3
+```
+
+```{r plot4, echo=FALSE}
+plot4
+```
+
+```{r plot5, echo=FALSE}
+plot5
+```
+
+```{r plot6, echo=FALSE}
+plot6
+```
+
+```{r plotw1, echo=FALSE}
+plotw1
+```
+
+```{r plotw4, echo=FALSE}
+plotw4
+```
+
+```{r plotw5, echo=FALSE}
+plot5w
+```

@@ -5,9 +5,11 @@ library(Cairo)
 library(lubridate)
 
 #stmf <- readr::read_csv("https://www.mortality.org/Public/STMF/Outputs/stmf.csv", skip=1)
-#saveRDS(stmf, "stmfsaved9")
+#saveRDS(stmf, "stmfsaved12")
 
-stmf<-readRDS("stmfsaved9")
+stmf<-readRDS("stmfsaved12")
+
+#summing up UK
 
 mingbrweek<-stmf[startsWith(stmf$CountryCode,'GBR') & stmf$Sex=='b'&stmf$Year==2020,]%>% group_by(CountryCode)%>%
   summarize(maxweek=max(Week))%>%
@@ -15,7 +17,6 @@ mingbrweek<-stmf[startsWith(stmf$CountryCode,'GBR') & stmf$Sex=='b'&stmf$Year==2
   summarize(min(maxweek))%>%
   as.numeric()
 
-#summing up UK
 gbr<-stmf[startsWith(stmf$CountryCode,'GBR') & stmf$Sex=='b' & (stmf$Week<=mingbrweek|stmf$Year<2020),] %>%  
   mutate(year=Year, week=Week)%>%
   group_by(year, week)%>%
@@ -69,26 +70,19 @@ deaths <- stmf %>%
                      GRC="Grecja",
                      FRATNP="Francja",
                      GBR_NIR = "Irlandia Północna",
+                     TWN="Tajwan", 
                      KOR="Korea",
                      NZL_NP="Nowa Zelandia", 
                      CHL="Chile",
                      CAN="Kanada")
   ) %>%
   select(year, week, country, country_code, deaths) %>%
-  rbind(list(2020, 41, "Polska","POL", 9164)) %>%
-  rbind(list(2020, 42, "Polska","POL", 10222)) %>%
-  rbind(list(2020, 43, "Polska","POL", 12318)) %>%
-  rbind(list(2020, 44, "Polska","POL", 14634)) %>%
   bind_rows(gbr) %>%
   group_by(country) %>%
   mutate(mean_deaths = mean(deaths, na.rm=TRUE))
 
-#weeks 41-44 added from money.pl
-#https://infogram.com/liczba-zgonow-w-dobie-epidemii-1h7v4pwnw1kq86k
-#https://www.money.pl/gospodarka/i-znowu-rekord-liczba-ukrytych-ofiar-epidemii-wciaz-rosnie-6573778690960288a.html
+#max(deaths$deaths/deaths$mean_deaths)
 
-
-#deaths [deaths$country %in% c("Stany Zjednoczone"),] %>%
 plot1<-deaths%>%
   mutate(thisyear = (year == 2020)) %>%
   ggplot(aes(x=week, y=deaths, group=year)) + 
@@ -115,7 +109,7 @@ plot2<-deaths%>%
   ylab("liczba zgonów") +
   xlab("tydzień") + 
   geom_blank(aes(y = 0)) +
-  geom_blank(aes(y = 2.75*mean_deaths)) +
+  geom_blank(aes(y = 2.8*mean_deaths)) +
   scale_y_continuous(labels= scales::comma)
 
 print(plot2)
@@ -166,11 +160,12 @@ ggsave(filename="plot4.pdf", plot=plot4+theme(plot.margin=unit(c(1,1,1,1),"cm"))
 
 
 # owid <- readr::read_csv("https://covid.ourworldindata.org/data/owid-covid-data.csv", col_types='fffDnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn')
-#saveRDS(owid, "owidsaved2")
+#saveRDS(owid, "owidsaved5")
 
-owid<-readRDS("owidsaved2")
+owid<-readRDS("owidsaved5")
 
-selected_countries<-c('POL', 'BEL', 'NLD', 'SWE', 'FRA', 'FRATNP', 'ESP', 'ITA', 'CAN', 'USA', 'CHL', 'ISR', 'DEU', 'DEUTNP', 'CHE', 'GBR')
+selected_countries<-c('POL', 'BEL', 'NLD', 'SWE', 'FRA', 'FRATNP', 'ESP', 'ITA', 'CAN', 'USA', 'CHL', 'ISR', 'DEU', 'DEUTNP', 'CHE', 'GBR', 'CZE', 'HUN', 'BGR', 'AUT', 'SVN', 'LTU', 'HRV',
+                      'PRT')
 
 owid2<-owid%>%
   filter(iso_code %in% selected_countries 
